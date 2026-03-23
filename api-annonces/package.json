@@ -1,0 +1,25 @@
+{
+  "name": "assurmoi",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/websocietyfr/assurmoi-supdevinciM2Dev2026#readme",
+  "bugs": {
+    "url": "https://github.com/websocietyfr/assurmoi-supdevinciM2Dev2026/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/websocietyfr/assurmoi-supdevinciM2Dev2026.git"
+  },
+  "license": "ISC",
+  "author": "Soufian AIT TIRITE",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  }
+}

@@ -1,5 +1,3 @@
-version: '3.1'
-
 services:
   # NodeJS Service
   app-assurmoi-node:
@@ -17,14 +15,16 @@ services:
     environment:
       - NODE_ENV=development
     volumes:
-      - './:/home/app:rw'
+      - './api-annonces:/home/app/api-annonces:rw'
+      # Préserver les dépendances installées dans l'image build (évite d'effacer `node_modules`)
+      - 'api-annonces-node-modules:/home/app/api-annonces/node_modules'
     ports:
       - "3000:3000"
     networks:
       - default
     expose:
       - "3000"
-    working_dir: '/home/app/assurmoi'
+    working_dir: '/home/app/api-annonces'
   # SMTP server
   app-assurmoi-mailhog:
     image: mailhog/mailhog
@@ -46,3 +46,6 @@ services:
     restart: always
     ports:
       - 8080:8080
+
+volumes:
+  api-annonces-node-modules:
