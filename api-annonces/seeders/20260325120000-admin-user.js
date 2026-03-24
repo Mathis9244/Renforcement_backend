@@ -1,6 +1,12 @@
 'use strict';
 
-const bcrypt = require('bcryptjs');
+/**
+ * Mot de passe initial : Admin123!
+ * Hash bcrypt (10 rounds) pré-calculé pour éviter require('bcryptjs') dans le seeder :
+ * le volume Docker `api-annonces-node-modules` peut ne pas contenir toutes les deps tant qu'on n'a pas fait `npm install` dans le conteneur.
+ */
+const ADMIN_PASSWORD_HASH =
+  '$2b$10$aErxwIbX6Gl8WjWKvskZwuD.4DYr9xDAGzNcgiIqvK5N0.YqY8qxK';
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
@@ -11,11 +17,10 @@ module.exports = {
     if (rows && rows.length > 0) {
       return;
     }
-    const hash = await bcrypt.hash('Admin123!', 10);
     await queryInterface.bulkInsert('User', [
       {
         username: 'admin',
-        password: hash,
+        password: ADMIN_PASSWORD_HASH,
         firstname: 'Admin',
         lastname: 'AssurMoi',
         email: 'admin@assurmoi.fr',
