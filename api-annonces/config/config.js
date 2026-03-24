@@ -1,43 +1,50 @@
 require('dotenv').config()
 
+const dbUsername = process.env.DB_USERNAME || 'root';
+const dbPassword = process.env.DB_PASSWORD || 'root';
+const dbHost = process.env.DB_HOST || 'app-assurmoi-db';
+const dbPort = process.env.DB_PORT || '3306';
+const dbName = process.env.DB_NAME || 'assurmoidb';
+const useSSL = process.env.DB_SSL === 'true';
+
 module.exports = {
 	development: {
-    username: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-		port: process.env.DB_PORT,
+    username: dbUsername,
+    password: dbPassword,
+    database: dbName,
+    host: dbHost,
+		port: dbPort,
     dialect: "mariadb",
-		dialectOptions: {
+		dialectOptions: useSSL ? {
 			ssl: {
 				require: true
 			}
-    }
+    } : {}
   },
   test: {
-    username: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-		port: process.env.DB_PORT,
+    username: dbUsername,
+    password: dbPassword,
+    database: dbName,
+    host: dbHost,
+		port: dbPort,
     dialect: "mariadb",
-		dialectOptions: {
+		dialectOptions: useSSL ? {
         ssl: {
             require: true
         }
-    }
+    } : {}
   },
   production: {
-    username: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-		port: process.env.DB_PORT,
+    username: dbUsername,
+    password: dbPassword,
+    database: dbName,
+    host: dbHost,
+		port: dbPort,
     dialect: "mariadb",
-		dialectOptions: {
+		dialectOptions: useSSL ? {
         ssl: {
             require: true
         }
-    }
+    } : {}
   }
 }

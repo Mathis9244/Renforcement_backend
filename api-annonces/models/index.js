@@ -5,18 +5,22 @@ const basename = path.basename(__filename)
 const db = {}
 
 const { Sequelize } = require('sequelize')
-const User = require('./user')
 require('dotenv').config()
 
-// const db_username = process.env.DB_USERNAME || 'root';
+const dbUsername = process.env.DB_USERNAME || 'root';
+const dbPassword = process.env.DB_PASSWORD || 'root';
+const dbHost = process.env.DB_HOST || 'app-assurmoi-db';
+const dbPort = process.env.DB_PORT || '3306';
+const dbName = process.env.DB_NAME || 'assurmoidb';
+const useSSL = process.env.DB_SSL === 'true';
 
-const dbInstance = new Sequelize(`mariadb://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`, {
+const dbInstance = new Sequelize(`mariadb://${dbUsername}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`, {
     dialect: 'mariadb',
-    dialectOptions: {
+    dialectOptions: useSSL ? {
         ssl: {
             require: true
         }
-    }
+    } : {}
 })
 
 fs

@@ -9,9 +9,9 @@ async function validateUsername(req, res, next) {
         return next();
     }
     
-    res.status(400).json({
+    return res.status(400).json({
         message: "missing username"
-    }).send();
+    });
 }
 
 module.exports = {

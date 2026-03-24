@@ -1,6 +1,8 @@
-const express = require('express')
+const express = require('express');
 const router = express.Router();
-const { validateUsername } = require('../middlewares/users')
+const { validateUsername } = require('../middlewares/users');
+const { requireRoles } = require('../middleware/auth');
+const { ROLES } = require('../constants/roles');
 const {
     getAllUsers,
     getUser,
@@ -9,14 +11,11 @@ const {
     deleteUser
 } = require('../services/users');
 
-router.post('/', validateUsername, createUser)
+router.get('/', getAllUsers);
+router.get('/:id', getUser);
 
-router.get('/:id', getUser)
-
-router.get('/', getAllUsers)
-
-router.delete('/:id', deleteUser)
-
-router.put('/:id', updateUser)
+router.post('/', requireRoles(ROLES.ADMIN), validateUsername, createUser);
+router.put('/:id', requireRoles(ROLES.ADMIN), updateUser);
+router.delete('/:id', requireRoles(ROLES.ADMIN), deleteUser);
 
 module.exports = router;

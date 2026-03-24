@@ -1,0 +1,459 @@
+openapi: 3.0.3
+info:
+  title: AssurMoi API — Gestion des sinistres
+  description: |
+    API backend pour la digitalisation du suivi des sinistres et dossiers de prise en charge.
+    Authentification JWT. Rôles : `admin`, `gestionnaire_portefeuille`, `charge_suivi`, `charge_clientele`.
+    Référence opérateurs Sequelize (requêtes métier) : https://sequelize.org/docs/v6/core-concepts/model-querying-basics/#operators
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Développement local (Docker)
+
+tags:
+  - name: Auth
+  - name: Users
+  - name: Claims
+  - name: CaseFiles
+  - name: Documents
+  - name: Approvals
+  - name: Audit
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          type: object
+
+    ClaimInput:
+      type: object
+      required:
+        - vehicleRegistration
+        - driverFirstName
+        - driverLastName
+        - callAt
+        - accidentAt
+        - contextText
+      properties:
+        vehicleRegistration:
+          type: string
+          description: Immatriculation du véhicule
+        driverFirstName:
+          type: string
+        driverLastName:
+          type: string
+        driverIsInsured:
+          type: boolean
+          default: true
+        callAt:
+          type: string
+          format: date-time
+        accidentAt:
+          type: string
+          format: date-time
+        contextText:
+          type: string
+        liabilityAccepted:
+          type: boolean
+        liabilityPercent:
+          type: integer
+          enum: [0, 50, 100]
+          description: Si responsabilité non engagée, 0% automatique
+
+    CompleteClaimRequest:
+      type: object
+      required: [scenario]
+      properties:
+        scenario:
+          type: string
+          enum: [reparable, total_loss]
+        assignedToId:
+          type: integer
+          nullable: true
+
+    TransitionRequest:
+      type: object
+      required: [toState]
+      properties:
+        toState:
+          type: string
+        comment:
+          type: string
+
+    DocumentInput:
+      type: object
+      required: [docType, fileUrl]
+      properties:
+        docType:
+          type: string
+          enum:
+            - attestation_assurance
+            - carte_grise
+            - piece_identite_conducteur
+            - other
+        fileUrl:
+          type: string
+          description: URL ou chemin de stockage du fichier
+        caseFileId:
+          type: integer
+          nullable: true
+
+paths:
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Connexion (JWT)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Identifiants invalides
+
+  /api/v1/auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Demande de réinitialisation du mot de passe
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+      responses:
+        '200':
+          description: OK (token renvoyé en dev — à remplacer par email en production)
+
+  /api/v1/auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Réinitialisation avec token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Mot de passe mis à jour
+
+  /api/v1/claims:
+    get:
+      tags: [Claims]
+      security: [{ bearerAuth: [] }]
+      summary: Liste des sinistres (filtrée par rôle)
+      responses:
+        '200':
+          description: OK
+    post:
+      tags: [Claims]
+      security: [{ bearerAuth: [] }]
+      summary: Créer un sinistre (brouillon)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimInput'
+      responses:
+        '201':
+          description: Créé
+
+  /api/v1/claims/{id}:
+    get:
+      tags: [Claims]
+      security: [{ bearerAuth: [] }]
+      summary: Détail sinistre
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+    patch:
+      tags: [Claims]
+      security: [{ bearerAuth: [] }]
+      summary: Mettre à jour un sinistre (statut draft uniquement)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimInput'
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/claims/{id}/complete:
+    post:
+      tags: [Claims]
+      security: [{ bearerAuth: [] }]
+      summary: Clôturer la saisie sinistre et créer le dossier de prise en charge
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteClaimRequest'
+      responses:
+        '201':
+          description: Dossier créé
+
+  /api/v1/case-files:
+    get:
+      tags: [CaseFiles]
+      security: [{ bearerAuth: [] }]
+      summary: Liste des dossiers
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/case-files/{id}:
+    get:
+      tags: [CaseFiles]
+      security: [{ bearerAuth: [] }]
+      summary: Détail dossier (transitions, approbations)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/case-files/{id}/assign:
+    patch:
+      tags: [CaseFiles]
+      security: [{ bearerAuth: [] }]
+      summary: Affecter un chargé de suivi
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assignedToId]
+              properties:
+                assignedToId:
+                  type: integer
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/case-files/{id}/transition:
+    post:
+      tags: [CaseFiles]
+      security: [{ bearerAuth: [] }]
+      summary: Faire progresser le dossier (machine à états + approbation manager si requis)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransitionRequest'
+      responses:
+        '200':
+          description: Transition appliquée
+        '202':
+          description: Approbation gestionnaire requise
+
+  /api/v1/case-files/{id}/esign:
+    post:
+      tags: [CaseFiles]
+      security: [{ bearerAuth: [] }]
+      summary: Stub signature électronique (DocuSign / équivalent UE à brancher)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Stub OK
+
+  /api/v1/claims/{claimId}/documents:
+    post:
+      tags: [Documents]
+      security: [{ bearerAuth: [] }]
+      summary: Ajouter un document au sinistre
+      parameters:
+        - in: path
+          name: claimId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentInput'
+      responses:
+        '201':
+          description: Créé
+
+  /api/v1/documents/{id}/validate:
+    patch:
+      tags: [Documents]
+      security: [{ bearerAuth: [] }]
+      summary: Valider ou refuser un document (gestionnaire)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [approved, rejected]
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/approvals/pending:
+    get:
+      tags: [Approvals]
+      security: [{ bearerAuth: [] }]
+      summary: File d'attente des approbations
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/approvals/{id}/decide:
+    patch:
+      tags: [Approvals]
+      security: [{ bearerAuth: [] }]
+      summary: Approuver ou refuser une demande de transition
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision:
+                  type: string
+                  enum: [approved, rejected]
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/audit/logs:
+    get:
+      tags: [Audit]
+      security: [{ bearerAuth: [] }]
+      summary: Journal d'audit (gestionnaire / admin)
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: OK
+
+  /user:
+    get:
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      summary: Liste utilisateurs
+      responses:
+        '200':
+          description: OK
+
+  /user/{id}:
+    get:
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      summary: Détail utilisateur
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK

@@ -1,13 +1,12 @@
-const { Model, DataTypes, Sequelize } = require('sequelize')
+const { Model, DataTypes } = require('sequelize')
 
 const User = (dbInstance, DataTypes) => {
     class User extends Model {
-        // static associate(models) {
-        //     this.belongsTo(models.Person, {
-        //         foreignKey: 'person_id',
-        //         as: 'Person'
-        //     })
-        // }
+        static associate(models) {
+            User.hasMany(models.Claim, { foreignKey: 'createdById', as: 'createdClaims' });
+            User.hasMany(models.CaseFile, { foreignKey: 'assignedToId', as: 'assignedCases' });
+            User.hasMany(models.CaseFile, { foreignKey: 'createdById', as: 'createdCases' });
+        }
     }
 
     User.init(
@@ -28,11 +27,41 @@ const User = (dbInstance, DataTypes) => {
                 type: DataTypes.STRING,
                 allowNull: true
             },
-            email: DataTypes.STRING
+            email: DataTypes.STRING,
+            role: {
+                type: DataTypes.STRING(64),
+                allowNull: false,
+                defaultValue: 'charge_clientele',
+            },
+            isActive: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: true,
+            },
+            twoFactorEnabled: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: false,
+            },
+            twoFactorSecret: {
+                type: DataTypes.STRING(255),
+                allowNull: true,
+            },
         },
         {
             sequelize: dbInstance,
-            modelName: 'User'
+            modelName: 'User',
+            tableName: 'User',
+            freezeTableName: true,
+            timestamps: false,
+            defaultScope: {
+                attributes: { exclude: ['password', 'twoFactorSecret'] },
+            },
+            scopes: {
+                withPassword: {
+                    attributes: { exclude: ['twoFactorSecret'] },
+                },
+            },
         }
     )
 
