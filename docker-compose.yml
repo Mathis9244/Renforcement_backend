@@ -14,6 +14,13 @@ services:
        - 'app-assurmoi-mailhog:mailhog'
     environment:
       - NODE_ENV=development
+      # Prioritaires sur le fichier .env monté : connexion DB depuis le conteneur
+      - DB_HOST=app-assurmoi-db
+      - DB_PORT=3306
+      - DB_NAME=assurmoidb
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+      - DB_SSL=false
     volumes:
       - './api-annonces:/home/app/api-annonces:rw'
       # Préserver les dépendances installées dans l'image build (évite d'effacer `node_modules`)
@@ -38,6 +45,9 @@ services:
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: assurmoidb
+    ports:
+      # Permet migrations/seed depuis Windows (127.0.0.1) en plus du réseau Docker
+      - "3306:3306"
     volumes:
       - './db-data:/var/lib/mysql:rw'
   # Database client

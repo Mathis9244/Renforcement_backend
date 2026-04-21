@@ -1,0 +1,16 @@
+{
+  "smtp": {
+    "host": "app-assurmoi-mailhog",
+    "port": 1025,
+    "secure": false,
+    "auth": null
+  },
+  "from": {
+    "name": "AssurMoi",
+    "email": "no-reply@assurmoi.fr"
+  },
+  "resetPassword": {
+    "baseUrl": "http://localhost:5173"
+  }
+}
+

@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { User, PasswordResetToken } = require('../models');
 const { signToken } = require('../middleware/auth');
 const { writeAuditLog } = require('../lib/audit');
+const { sendResetPasswordEmail } = require('../lib/mailer');
 
 async function login(req, res) {
   try {
@@ -58,9 +59,13 @@ async function forgotPassword(req, res) {
       action: 'PASSWORD_RESET_REQUESTED',
       userId: user.id,
     });
+    try {
+      await sendResetPasswordEmail({ to: user.email, token: raw });
+    } catch (e) {
+      // En dev (MailHog), on ne bloque pas la réinitialisation si l'envoi email échoue.
+    }
     return res.status(200).json({
-      message: 'Reset token created (dev: return token once)',
-      resetToken: raw,
+      message: 'If the email exists, a reset link will be sent.',
     });
   } catch (e) {
     return res.status(500).json({ message: e.message });

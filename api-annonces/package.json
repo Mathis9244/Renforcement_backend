@@ -2,16 +2,16 @@
   "name": "assurmoi",
   "version": "1.0.0",
   "description": "",
-  "homepage": "https://github.com/websocietyfr/assurmoi-supdevinciM2Dev2026#readme",
+  "homepage": "https://github.com/Mathis9244/Renforcement_backend#readme",
   "bugs": {
-    "url": "https://github.com/websocietyfr/assurmoi-supdevinciM2Dev2026/issues"
+    "url": "https://github.com/Mathis9244/Renforcement_backend/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/websocietyfr/assurmoi-supdevinciM2Dev2026.git"
+    "url": "git+https://github.com/Mathis9244/Renforcement_backend.git"
   },
   "license": "ISC",
-  "author": "Soufian AIT TIRITE",
+  "author": " Bianic Mathis",
   "type": "commonjs",
   "main": "app.js",
   "scripts": {
@@ -28,6 +28,7 @@
     "express-validator": "^7.3.1",
     "jsonwebtoken": "^9.0.2",
     "mariadb": "^3.5.2",
+    "nodemailer": "^8.0.5",
     "sequelize": "^6.37.8"
   },
   "devDependencies": {

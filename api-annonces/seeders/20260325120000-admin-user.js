@@ -10,9 +10,12 @@ const ADMIN_PASSWORD_HASH =
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface) {
-    const [rows] = await queryInterface.sequelize.query(
-      "SELECT id FROM `User` WHERE username = 'admin' LIMIT 1"
+  async up(queryInterface, Sequelize) {
+    // QueryTypes.SELECT évite le tuple [rows, meta] : avec mysql2/mariadb, meta peut être
+    // un tableau et provoquer "Cannot delete property 'meta'" dans le pipeline du CLI.
+    const rows = await queryInterface.sequelize.query(
+      "SELECT id FROM `User` WHERE username = 'admin' LIMIT 1",
+      { type: Sequelize.QueryTypes.SELECT }
     );
     if (rows && rows.length > 0) {
       return;

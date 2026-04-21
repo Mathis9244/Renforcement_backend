@@ -28,11 +28,27 @@ components:
       bearerFormat: JWT
 
   schemas:
+    IdParam:
+      type: integer
+      minimum: 1
+
     Error:
       type: object
       properties:
         message:
           type: string
+        error:
+          type: string
+          nullable: true
+
+    Role:
+      type: string
+      enum:
+        - admin
+        - gestionnaire_portefeuille
+        - charge_suivi
+        - charge_clientele
+        - assure
 
     LoginRequest:
       type: object
@@ -48,8 +64,133 @@ components:
       properties:
         token:
           type: string
+          nullable: true
+        twoFactorRequired:
+          type: boolean
+          nullable: true
+        message:
+          type: string
+          nullable: true
         user:
-          type: object
+          $ref: '#/components/schemas/User'
+
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+
+    ForgotPasswordResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        resetToken:
+          type: string
+          nullable: true
+          description: "Token renvoyé en dev (en prod: envoyé par e-mail/SMS)"
+
+    ResetPasswordRequest:
+      type: object
+      required: [token, newPassword]
+      properties:
+        token:
+          type: string
+        newPassword:
+          type: string
+          minLength: 8
+
+    TwoFactorSetupResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        doc:
+          type: string
+          nullable: true
+
+    TwoFactorVerifyRequest:
+      type: object
+      properties:
+        temporaryToken:
+          type: string
+          nullable: true
+        otp:
+          type: string
+          nullable: true
+
+    User:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/IdParam'
+        username:
+          type: string
+        firstname:
+          type: string
+          nullable: true
+        lastname:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        role:
+          $ref: '#/components/schemas/Role'
+        isActive:
+          type: boolean
+        twoFactorEnabled:
+          type: boolean
+
+    UserCreateRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          minLength: 8
+        email:
+          type: string
+          nullable: true
+        firstname:
+          type: string
+          nullable: true
+        lastname:
+          type: string
+          nullable: true
+        role:
+          $ref: '#/components/schemas/Role'
+        isActive:
+          type: boolean
+          default: true
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        password:
+          type: string
+          minLength: 8
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        firstname:
+          type: string
+          nullable: true
+        lastname:
+          type: string
+          nullable: true
+        role:
+          $ref: '#/components/schemas/Role'
+        isActive:
+          type: boolean
+          nullable: true
+        twoFactorEnabled:
+          type: boolean
+          nullable: true
 
     ClaimInput:
       type: object
@@ -86,6 +227,26 @@ components:
           enum: [0, 50, 100]
           description: Si responsabilité non engagée, 0% automatique
 
+    Claim:
+      allOf:
+        - $ref: '#/components/schemas/ClaimInput'
+        - type: object
+          properties:
+            id:
+              $ref: '#/components/schemas/IdParam'
+            status:
+              type: string
+              enum: [draft, complete]
+            createdById:
+              type: integer
+              nullable: true
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
     CompleteClaimRequest:
       type: object
       required: [scenario]
@@ -97,6 +258,33 @@ components:
           type: integer
           nullable: true
 
+    CaseFile:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/IdParam'
+        caseNumber:
+          type: string
+        claimId:
+          type: integer
+        scenario:
+          type: string
+          enum: [reparable, total_loss]
+        currentState:
+          type: string
+        assignedToId:
+          type: integer
+          nullable: true
+        createdById:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
     TransitionRequest:
       type: object
       required: [toState]
@@ -105,6 +293,7 @@ components:
           type: string
         comment:
           type: string
+          nullable: true
 
     DocumentInput:
       type: object
@@ -123,6 +312,87 @@ components:
         caseFileId:
           type: integer
           nullable: true
+
+    ClaimDocument:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/IdParam'
+        claimId:
+          type: integer
+        caseFileId:
+          type: integer
+          nullable: true
+        docType:
+          type: string
+        fileUrl:
+          type: string
+        validationStatus:
+          type: string
+          enum: [pending, approved, rejected]
+        validatedById:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Approval:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/IdParam'
+        caseFileId:
+          type: integer
+        stepKey:
+          type: string
+        requesterId:
+          type: integer
+          nullable: true
+        approverId:
+          type: integer
+          nullable: true
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DecideApprovalRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [approved, rejected]
+
+    AuditLog:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/IdParam'
+        entityType:
+          type: string
+        entityId:
+          type: string
+        action:
+          type: string
+        userId:
+          type: integer
+          nullable: true
+        metadata:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
 
 paths:
   /api/v1/auth/login:
@@ -150,36 +420,63 @@ paths:
       tags: [Auth]
       summary: Demande de réinitialisation du mot de passe
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [email]
-              properties:
-                email:
-                  type: string
+              $ref: '#/components/schemas/ForgotPasswordRequest'
       responses:
         '200':
           description: OK (token renvoyé en dev — à remplacer par email en production)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForgotPasswordResponse'
 
   /api/v1/auth/reset-password:
     post:
       tags: [Auth]
       summary: Réinitialisation avec token
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [token, newPassword]
-              properties:
-                token:
-                  type: string
-                newPassword:
-                  type: string
+              $ref: '#/components/schemas/ResetPasswordRequest'
       responses:
         '200':
           description: Mot de passe mis à jour
+
+  /api/v1/auth/2fa/setup:
+    post:
+      tags: [Auth]
+      summary: Mise en place 2FA (stub)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '501':
+          description: Stub 2FA setup
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorSetupResponse'
+
+  /api/v1/auth/2fa/verify:
+    post:
+      tags: [Auth]
+      summary: Vérification 2FA (stub)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorVerifyRequest'
+      responses:
+        '501':
+          description: Stub 2FA verify
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorSetupResponse'
 
   /api/v1/claims:
     get:
@@ -189,11 +486,21 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  claims:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Claim'
     post:
       tags: [Claims]
       security: [{ bearerAuth: [] }]
       summary: Créer un sinistre (brouillon)
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -201,6 +508,13 @@ paths:
       responses:
         '201':
           description: Créé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  claim:
+                    $ref: '#/components/schemas/Claim'
 
   /api/v1/claims/{id}:
     get:
@@ -216,6 +530,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  claim:
+                    $ref: '#/components/schemas/Claim'
     patch:
       tags: [Claims]
       security: [{ bearerAuth: [] }]
@@ -227,6 +548,7 @@ paths:
           schema:
             type: integer
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -234,6 +556,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  claim:
+                    $ref: '#/components/schemas/Claim'
 
   /api/v1/claims/{id}/complete:
     post:
@@ -247,6 +576,7 @@ paths:
           schema:
             type: integer
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -254,6 +584,15 @@ paths:
       responses:
         '201':
           description: Dossier créé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  claim:
+                    $ref: '#/components/schemas/Claim'
+                  caseFile:
+                    $ref: '#/components/schemas/CaseFile'
 
   /api/v1/case-files:
     get:
@@ -263,6 +602,15 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  caseFiles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CaseFile'
 
   /api/v1/case-files/{id}:
     get:
@@ -278,6 +626,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  caseFile:
+                    $ref: '#/components/schemas/CaseFile'
 
   /api/v1/case-files/{id}/assign:
     patch:
@@ -291,6 +646,7 @@ paths:
           schema:
             type: integer
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -302,6 +658,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  caseFile:
+                    $ref: '#/components/schemas/CaseFile'
 
   /api/v1/case-files/{id}/transition:
     post:
@@ -315,6 +678,7 @@ paths:
           schema:
             type: integer
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -322,8 +686,24 @@ paths:
       responses:
         '200':
           description: Transition appliquée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  caseFile:
+                    $ref: '#/components/schemas/CaseFile'
         '202':
           description: Approbation gestionnaire requise
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  approvalId:
+                    type: integer
 
   /api/v1/case-files/{id}/esign:
     post:
@@ -339,6 +719,15 @@ paths:
       responses:
         '200':
           description: Stub OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  envelopeId:
+                    type: string
 
   /api/v1/claims/{claimId}/documents:
     post:
@@ -352,6 +741,7 @@ paths:
           schema:
             type: integer
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -359,6 +749,13 @@ paths:
       responses:
         '201':
           description: Créé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document:
+                    $ref: '#/components/schemas/ClaimDocument'
 
   /api/v1/documents/{id}/validate:
     patch:
@@ -372,6 +769,7 @@ paths:
           schema:
             type: integer
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -384,6 +782,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document:
+                    $ref: '#/components/schemas/ClaimDocument'
 
   /api/v1/approvals/pending:
     get:
@@ -393,6 +798,15 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  approvals:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Approval'
 
   /api/v1/approvals/{id}/decide:
     patch:
@@ -406,18 +820,23 @@ paths:
           schema:
             type: integer
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [decision]
-              properties:
-                decision:
-                  type: string
-                  enum: [approved, rejected]
+              $ref: '#/components/schemas/DecideApprovalRequest'
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  caseFile:
+                    $ref: '#/components/schemas/CaseFile'
+                  approval:
+                    $ref: '#/components/schemas/Approval'
 
   /api/v1/audit/logs:
     get:
@@ -433,15 +852,86 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditLog'
 
   /user:
     get:
       tags: [Users]
       security: [{ bearerAuth: [] }]
       summary: Liste utilisateurs
+      parameters:
+        - in: query
+          name: usernameLike
+          schema:
+            type: string
+        - in: query
+          name: emailLike
+          schema:
+            type: string
+        - in: query
+          name: firstname
+          schema:
+            type: string
+        - in: query
+          name: lastname
+          schema:
+            type: string
+        - in: query
+          name: ids
+          schema:
+            type: string
+          description: Liste d'IDs séparés par des virgules (ex. "1,2,3")
+        - in: query
+          name: idGte
+          schema:
+            type: integer
+        - in: query
+          name: idLte
+          schema:
+            type: integer
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+
+    post:
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      summary: Créer un utilisateur (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '201':
+          description: Créé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '403':
+          description: Forbidden
 
   /user/{id}:
     get:
@@ -457,3 +947,48 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+
+    put:
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      summary: Mettre à jour un utilisateur (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: Forbidden
+
+    delete:
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      summary: Désactiver un utilisateur (admin) (soft delete via isActive=false)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: Forbidden

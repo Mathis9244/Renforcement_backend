@@ -1,3 +1,4 @@
 db-data/*
 api-annonces/node_modules/
 node_modules/
+.env
