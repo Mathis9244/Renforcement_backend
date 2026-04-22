@@ -2,3 +2,12 @@ db-data/*
 api-annonces/node_modules/
 node_modules/
 .env
+# Expo / npm caches
+assurmobile/.npm/
+assurmobile/node_modules/
+assurmobile/.expo/
+
+# plus général (si tu préfères)
+**/.npm/
+**/node_modules/
+**/.expo/

@@ -32,6 +32,36 @@ services:
     expose:
       - "3000"
     working_dir: '/home/app/api-annonces'
+
+  # react native environment
+  app-assurmoi-app:
+    container_name: 'app-assurmoi-reactnative'
+    build:
+      context: ./
+      dockerfile: Dockerfile.front
+    command: >
+      sh -lc "if [ ! -f package.json ]; then
+        echo 'Expo project not initialized in ./assurmobile (missing package.json).';
+        echo 'Run: docker compose run --rm app-assurmoi-app npx create-expo-app .';
+        tail -f /dev/null;
+      else
+        npm install && npx expo start --port 8081 --non-interactive --lan;
+      fi"
+    environment:
+      - NODE_ENV=development
+      - EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0
+    ports:
+      - 8081:8081
+      - 19000:19000
+      - 19001:19001
+      - 19002:19002
+    volumes:
+      - './assurmobile:/home/app:rw'
+      # Préserver les dépendances installées dans l'image build (évite d'effacer `node_modules`)
+      - 'assurmobile-node-modules:/home/app/node_modules'
+    working_dir: '/home/app/'
+    stdin_open: true
+    tty: true
   # SMTP server
   app-assurmoi-mailhog:
     image: mailhog/mailhog
@@ -59,3 +89,4 @@ services:
 
 volumes:
   api-annonces-node-modules:
+  assurmobile-node-modules:
