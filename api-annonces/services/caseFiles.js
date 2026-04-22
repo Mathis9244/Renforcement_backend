@@ -6,8 +6,47 @@ const {
   User,
 } = require('../models');
 const { ROLES } = require('../constants/roles');
-const { findTransition, isManagerRole } = require('../constants/caseWorkflow');
+const { findTransition, isManagerRole, REQUIRED_FIELDS_BY_STATE } = require('../constants/caseWorkflow');
 const { writeAuditLog } = require('../lib/audit');
+
+function pickUpdatableFields(body) {
+  const allowed = [
+    'expertisePlannedAt',
+    'expertiseDoneAt',
+    'expertiseReportUrl',
+    'expertiseDiagnostic',
+    'interventionPlannedAt',
+    'vehiclePickupPlannedAt',
+    'vehiclePickupAt',
+    'interventionStartAt',
+    'interventionEndAt',
+    'restitutionPlannedAt',
+    'restitutionAt',
+    'invoiceReceivedAt',
+    'invoiceUrl',
+    'paidAt',
+    'thirdPartyPaid',
+    'indemnisationEstimate',
+    'insuredApproval',
+    'insuredRibUrl',
+    'indemnisationPaidAt',
+    'closedAt',
+  ];
+  const out = {};
+  for (const k of allowed) {
+    if (body[k] !== undefined) out[k] = body[k];
+  }
+  return out;
+}
+
+function validateRequiredFieldsForState(toState, body) {
+  const req = REQUIRED_FIELDS_BY_STATE[toState] || [];
+  const missing = req.filter((k) => body[k] === undefined || body[k] === null || body[k] === '');
+  if (missing.length) {
+    return { ok: false, missing };
+  }
+  return { ok: true, missing: [] };
+}
 
 async function listCaseFiles(req, res) {
   try {
@@ -84,6 +123,13 @@ async function transitionCaseFile(req, res) {
     if (!toState) {
       return res.status(400).json({ message: 'toState required' });
     }
+    const requiredCheck = validateRequiredFieldsForState(toState, req.body);
+    if (!requiredCheck.ok) {
+      return res.status(400).json({
+        message: 'Missing required fields for this workflow step',
+        missing: requiredCheck.missing,
+      });
+    }
     const cf = await CaseFile.findByPk(req.params.id);
     if (!cf) {
       return res.status(404).json({ message: 'Case file not found' });
@@ -99,28 +145,40 @@ async function transitionCaseFile(req, res) {
     if (!edge) {
       return res.status(400).json({ message: 'Invalid transition for this scenario' });
     }
+    const patch = pickUpdatableFields(req.body);
     if (edge.requiresManagerApproval && !isManagerRole(req.user.role)) {
       const existing = await Approval.findOne({
         where: { caseFileId: cf.id, stepKey: toState, status: 'pending' },
       });
       if (existing) {
+        if (Object.keys(patch).length) {
+          await cf.update(patch);
+        }
         return res.status(202).json({
           message: 'Waiting for manager approval',
           approvalId: existing.id,
         });
       }
-      const approval = await Approval.create({
-        caseFileId: cf.id,
-        stepKey: toState,
-        requesterId: req.user.id,
-        status: 'pending',
+      const approval = await cf.sequelize.transaction(async (t) => {
+        if (Object.keys(patch).length) {
+          await cf.update(patch, { transaction: t });
+        }
+        return await Approval.create(
+          {
+            caseFileId: cf.id,
+            stepKey: toState,
+            requesterId: req.user.id,
+            status: 'pending',
+          },
+          { transaction: t }
+        );
       });
       await writeAuditLog({
         entityType: 'CaseFile',
         entityId: cf.id,
         action: 'APPROVAL_REQUESTED',
         userId: req.user.id,
-        metadata: { toState, approvalId: approval.id },
+        metadata: { toState, approvalId: approval.id, fields: Object.keys(patch) },
       });
       return res.status(202).json({
         message: 'Manager approval required before transition',
@@ -128,7 +186,7 @@ async function transitionCaseFile(req, res) {
       });
     }
     await cf.sequelize.transaction(async (t) => {
-      await cf.update({ currentState: toState }, { transaction: t });
+      await cf.update({ ...patch, currentState: toState }, { transaction: t });
       await CaseTransition.create(
         {
           caseFileId: cf.id,
@@ -145,7 +203,7 @@ async function transitionCaseFile(req, res) {
       entityId: cf.id,
       action: 'CASE_TRANSITION',
       userId: req.user.id,
-      metadata: { fromState, toState },
+      metadata: { fromState, toState, fields: Object.keys(patch) },
     });
     const updated = await CaseFile.findByPk(cf.id);
     return res.status(200).json({ caseFile: updated });

@@ -25,6 +25,30 @@ const STATE = {
   INDEMNISATION_REGLEE: 'INDEMNISATION_REGLEE',
 };
 
+// Champs requis par étape (alignés sur le sujet Notion, version minimale).
+const REQUIRED_FIELDS_BY_STATE = {
+  [STATE.EXPERTISE_PLANIFIEE]: ['expertisePlannedAt'],
+  [STATE.EXPERTISE_REALISEE]: ['expertiseDoneAt', 'expertiseReportUrl', 'expertiseDiagnostic'],
+
+  [STATE.INTERVENTION_PLANIFIEE]: ['interventionPlannedAt'],
+  [STATE.VEHICULE_RESTITUE]: [
+    'vehiclePickupPlannedAt',
+    'vehiclePickupAt',
+    'interventionStartAt',
+    'interventionEndAt',
+    'restitutionPlannedAt',
+    'restitutionAt',
+  ],
+  [STATE.FACTURE_RECUE]: ['invoiceReceivedAt', 'invoiceUrl'],
+  [STATE.REGLEMENT_REALISE]: ['paidAt'],
+  [STATE.REFACTURATION_TIERS]: ['thirdPartyPaid'],
+  [STATE.DOSSIER_CLOS]: ['closedAt'],
+
+  [STATE.ESTIMATION_INDEMNISATION]: ['indemnisationEstimate'],
+  [STATE.ESTIMATION_ACCEPTEE]: ['insuredApproval'],
+  [STATE.INDEMNISATION_REGLEE]: ['insuredRibUrl', 'indemnisationPaidAt'],
+};
+
 /** @type {Record<string, Array<{ from: string, to: string, requiresManagerApproval?: boolean }>>} */
 const TRANSITIONS = {
   [SCENARIO.REPARABLE]: [
@@ -70,6 +94,7 @@ module.exports = {
   SCENARIO,
   STATE,
   TRANSITIONS,
+  REQUIRED_FIELDS_BY_STATE,
   getInitialState,
   findTransition,
   isManagerRole,
