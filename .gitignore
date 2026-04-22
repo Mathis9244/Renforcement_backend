@@ -11,3 +11,6 @@ assurmobile/.expo/
 **/.npm/
 **/node_modules/
 **/.expo/
+
+# Front web build output
+assurmoifront/dist/

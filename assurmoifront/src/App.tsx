@@ -63,8 +63,8 @@ function App() {
     >
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: 18, display: 'grid', gap: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 800 }}>AssurMoi — Front de test</div>
+            <div>
+            <div style={{ fontSize: 18, fontWeight: 800 }}>AssurMoi — Back-office</div>
             <div style={{ opacity: 0.8, fontSize: 12 }}>API: `http://localhost:3000` (via proxy Vite)</div>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -323,6 +323,10 @@ function CaseFilesPanel(props: { run: <T>(fn: () => Promise<T>) => Promise<T>; b
   const [caseId, setCaseId] = useState('1');
   const [toState, setToState] = useState('EXPERTISE_EN_ATTENTE');
   const [comment, setComment] = useState('test');
+  const [expertisePlannedAt, setExpertisePlannedAt] = useState(new Date().toISOString());
+  const [expertiseDoneAt, setExpertiseDoneAt] = useState(new Date().toISOString());
+  const [expertiseReportUrl, setExpertiseReportUrl] = useState('https://example.com/expert.pdf');
+  const [expertiseDiagnostic, setExpertiseDiagnostic] = useState<'reparable' | 'total_loss'>('reparable');
 
   return (
     <div style={{ display: 'grid', gap: 12 }}>
@@ -350,10 +354,35 @@ function CaseFilesPanel(props: { run: <T>(fn: () => Promise<T>) => Promise<T>; b
           <Field label="comment" value={comment} onChange={setComment} />
           <Button
             disabled={props.busy}
-            onClick={() => props.run(() => api.transitionCaseFile(Number(caseId), { toState, comment }))}
+            onClick={() =>
+              props.run(() =>
+                api.transitionCaseFile(Number(caseId), {
+                  toState,
+                  comment,
+                  expertisePlannedAt: toState === 'EXPERTISE_PLANIFIEE' ? expertisePlannedAt : undefined,
+                  expertiseDoneAt: toState === 'EXPERTISE_REALISEE' ? expertiseDoneAt : undefined,
+                  expertiseReportUrl: toState === 'EXPERTISE_REALISEE' ? expertiseReportUrl : undefined,
+                  expertiseDiagnostic: toState === 'EXPERTISE_REALISEE' ? expertiseDiagnostic : undefined,
+                })
+              )
+            }
           >
             Transition
           </Button>
+        </div>
+        <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10 }}>
+          <Field label="expertisePlannedAt" value={expertisePlannedAt} onChange={setExpertisePlannedAt} />
+          <Field label="expertiseDoneAt" value={expertiseDoneAt} onChange={setExpertiseDoneAt} />
+          <Field label="expertiseReportUrl" value={expertiseReportUrl} onChange={setExpertiseReportUrl} />
+          <SelectField
+            label="expertiseDiagnostic"
+            value={expertiseDiagnostic}
+            onChange={(v) => setExpertiseDiagnostic(v as any)}
+            options={[
+              { value: 'reparable', label: 'reparable' },
+              { value: 'total_loss', label: 'total_loss' },
+            ]}
+          />
         </div>
         <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
           Exemples: `EXPERTISE_PLANIFIEE`, `EXPERTISE_REALISEE`, `FACTURE_RECUE`, `REGLEMENT_REALISE`, `DOSSIER_CLOS`…

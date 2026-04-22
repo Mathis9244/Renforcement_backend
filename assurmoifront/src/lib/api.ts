@@ -48,6 +48,10 @@ export type CaseFile = {
   currentState: string;
   assignedToId?: number | null;
   createdById?: number | null;
+  expertisePlannedAt?: string | null;
+  expertiseDoneAt?: string | null;
+  expertiseReportUrl?: string | null;
+  expertiseDiagnostic?: string | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -153,7 +157,17 @@ export const api = {
     }),
 
   listCaseFiles: () => request<{ caseFiles: CaseFile[] }>('/api/v1/case-files'),
-  transitionCaseFile: (id: number, payload: { toState: string; comment?: string }) =>
+  transitionCaseFile: (
+    id: number,
+    payload: {
+      toState: string;
+      comment?: string;
+      expertisePlannedAt?: string;
+      expertiseDoneAt?: string;
+      expertiseReportUrl?: string;
+      expertiseDiagnostic?: string;
+    }
+  ) =>
     request<any>(`/api/v1/case-files/${id}/transition`, { method: 'POST', body: JSON.stringify(payload) }),
 
   listPendingApprovals: () => request<{ approvals: Approval[] }>('/api/v1/approvals/pending'),
