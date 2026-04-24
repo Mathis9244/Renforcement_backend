@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const userRoutes = require('./users');
 const authRoutes = require('./auth');
+const authService = require('../services/auth');
 const claimsRoutes = require('./claims');
 const caseFilesRoutes = require('./case-files');
 const approvalsRoutes = require('./approvals');
@@ -11,6 +12,8 @@ const { requireAuth } = require('../middleware/auth');
 
 function initRoutes(app) {
     app.use('/api/v1/auth', authRoutes);
+    // Compat mobile (repo école): POST /login -> POST /api/v1/auth/login
+    app.post('/login', authService.login);
 
     // Swagger UI (sans dépendance) pour rendre le Swagger testable au navigateur
     app.get('/api/v1/docs', (req, res) => {

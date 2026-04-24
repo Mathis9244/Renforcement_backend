@@ -12,6 +12,7 @@ type UserContextValue = {
   isAuthenticated: boolean;
   signIn: (params: { username: string; password: string }) => Promise<void>;
   signOut: () => void;
+  token: string | null;
 };
 
 const UserContext = createContext<UserContextValue | undefined>(undefined);
@@ -42,6 +43,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     return {
       session,
       isAuthenticated: Boolean(session?.token),
+      token: session?.token ?? null,
       async signIn({ username, password }) {
         const res = await api.login(username, password);
         if (!res.token || !res.user) throw new Error(res.message || "Login failed");
