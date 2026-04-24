@@ -4,6 +4,8 @@ import { Stack, useRouter } from "expo-router";
 import { Button, HelperText, Text, TextInput } from "react-native-paper";
 import { useUser } from "../providers/UserProvider";
 import { ApiError, getBaseUrl } from "../lib/api";
+import { Screen } from "../components/Screen";
+import { Notice } from "../components/Notice";
 
 export default function LoginScreen() {
   const [username, setUsername] = useState("admin");
@@ -25,7 +27,8 @@ export default function LoginScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.screen}
       >
-        <View style={styles.container}>
+        <Screen padded={false}>
+          <View style={styles.container}>
           <Text variant="headlineMedium" style={styles.title}>
             AssurMoi
           </Text>
@@ -33,17 +36,16 @@ export default function LoginScreen() {
             Connecte-toi pour continuer
           </Text>
 
-          <Text variant="bodySmall" style={styles.hint}>
+          <Notice>
             Compte de démo: <Text style={styles.bold}>admin</Text> / <Text style={styles.bold}>Admin123!</Text>
-          </Text>
-          <Text variant="bodySmall" style={styles.apiHint}>
+            {"\n"}
             API: <Text style={styles.bold}>{getBaseUrl()}</Text>
-          </Text>
+          </Notice>
           {Platform.OS === "ios" && getBaseUrl().includes("localhost") ? (
-            <Text variant="bodySmall" style={styles.apiHint}>
+            <Notice tone="info">
               iPhone: définis <Text style={styles.bold}>EXPO_PUBLIC_API_BASE_URL</Text> vers l’IP de ton PC (ex{" "}
-              <Text style={styles.bold}>http://10.18.72.114:3000</Text>)
-            </Text>
+              <Text style={styles.bold}>http://10.18.72.114:3000</Text>).
+            </Notice>
           ) : null}
 
           <View style={styles.form}>
@@ -97,7 +99,8 @@ export default function LoginScreen() {
               Mot de passe oublié ?
             </Button>
           </View>
-        </View>
+          </View>
+        </Screen>
       </KeyboardAvoidingView>
     </>
   );
@@ -109,11 +112,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 48,
+    gap: 12,
   },
   title: { fontWeight: "700" },
   subtitle: { marginTop: 6, opacity: 0.75 },
-  hint: { marginTop: 10, opacity: 0.85 },
-  apiHint: { marginTop: 6, opacity: 0.7 },
   bold: { fontWeight: "700" },
   form: { marginTop: 24, gap: 12 },
 });

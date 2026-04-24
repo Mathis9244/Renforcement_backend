@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { Button, Card, Snackbar, Text, TextInput, useTheme } from "react-native-paper";
+import { Button, Card, Snackbar, Text, TextInput } from "react-native-paper";
 import { api, type CaseFile } from "../../../lib/api";
 import { useUser } from "../../../providers/UserProvider";
+import { Screen } from "../../../components/Screen";
+import { Notice } from "../../../components/Notice";
 
 export default function CaseFilesScreen() {
   const { token } = useUser();
   const [caseFiles, setCaseFiles] = useState<CaseFile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [snack, setSnack] = useState<string | null>(null);
-  const theme = useTheme();
 
   const [caseId, setCaseId] = useState("1");
   const [toState, setToState] = useState("EXPERTISE_EN_ATTENTE");
@@ -61,69 +62,68 @@ export default function CaseFilesScreen() {
   }, [token]);
 
   return (
-    <ScrollView style={{ backgroundColor: theme.colors.background }} contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <Text variant="headlineSmall">Dossiers</Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
+    <Screen>
+      <ScrollView contentContainerStyle={{ gap: 12 }}>
+        <View style={styles.header}>
+          <Text variant="headlineSmall">Dossiers</Text>
           <Button mode="contained" disabled={!token} onPress={refresh}>
             Rafraîchir
           </Button>
         </View>
-      </View>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? <Notice tone="error">{error}</Notice> : null}
 
-      <Card>
-        <Card.Title title="Liste" />
-        <Card.Content style={{ gap: 8 }}>
-          {!caseFiles ? <Text style={{ opacity: 0.75 }}>Chargement…</Text> : null}
-          {caseFiles?.length === 0 ? <Text style={{ opacity: 0.75 }}>Aucun dossier pour le moment.</Text> : null}
-          {caseFiles?.map((c) => (
-            <View key={c.id} style={styles.row}>
-              <Text style={{ flex: 1 }}>
-                #{c.id} — {c.caseNumber} — {c.currentState}
-              </Text>
-            </View>
-          ))}
-        </Card.Content>
-      </Card>
+        <Card>
+          <Card.Title title="Liste" />
+          <Card.Content style={{ gap: 8 }}>
+            {!caseFiles ? <Text style={{ opacity: 0.75 }}>Chargement…</Text> : null}
+            {caseFiles?.length === 0 ? <Text style={{ opacity: 0.75 }}>Aucun dossier pour le moment.</Text> : null}
+            {caseFiles?.map((c) => (
+              <View key={c.id} style={styles.row}>
+                <Text style={{ flex: 1 }}>
+                  #{c.id} — {c.caseNumber} — {c.currentState}
+                </Text>
+              </View>
+            ))}
+          </Card.Content>
+        </Card>
 
-      <Card>
-        <Card.Title title="Transition dossier" subtitle="Comme dans le front (case-files/{id}/transition)" />
-        <Card.Content style={{ gap: 10 }}>
-          <TextInput label="Case ID" value={caseId} onChangeText={setCaseId} keyboardType="number-pad" />
-          <TextInput label="toState" value={toState} onChangeText={setToState} />
-          <TextInput label="comment" value={comment} onChangeText={setComment} />
+        <Card>
+          <Card.Title title="Transition dossier" subtitle="Comme dans le front (case-files/{id}/transition)" />
+          <Card.Content style={{ gap: 10 }}>
+            <TextInput label="Case ID" value={caseId} onChangeText={setCaseId} keyboardType="number-pad" />
+            <TextInput label="toState" value={toState} onChangeText={setToState} />
+            <TextInput label="comment" value={comment} onChangeText={setComment} />
 
-          <Text variant="bodySmall" style={{ opacity: 0.75 }}>
-            Si `toState` = EXPERTISE_PLANIFIEE, envoie `expertisePlannedAt`. Si `toState` = EXPERTISE_REALISEE, envoie les
-            champs d’expertise.
-          </Text>
+            <Text variant="bodySmall" style={{ opacity: 0.75 }}>
+              Si `toState` = EXPERTISE_PLANIFIEE, envoie `expertisePlannedAt`. Si `toState` = EXPERTISE_REALISEE, envoie les
+              champs d’expertise.
+            </Text>
 
-          <TextInput label="expertisePlannedAt (ISO)" value={expertisePlannedAt} onChangeText={setExpertisePlannedAt} />
-          <TextInput label="expertiseDoneAt (ISO)" value={expertiseDoneAt} onChangeText={setExpertiseDoneAt} />
-          <TextInput label="expertiseReportUrl" value={expertiseReportUrl} onChangeText={setExpertiseReportUrl} />
-          <TextInput
-            label="expertiseDiagnostic (reparable|total_loss)"
-            value={expertiseDiagnostic}
-            onChangeText={setExpertiseDiagnostic}
-          />
+            <TextInput label="expertisePlannedAt (ISO)" value={expertisePlannedAt} onChangeText={setExpertisePlannedAt} />
+            <TextInput label="expertiseDoneAt (ISO)" value={expertiseDoneAt} onChangeText={setExpertiseDoneAt} />
+            <TextInput label="expertiseReportUrl" value={expertiseReportUrl} onChangeText={setExpertiseReportUrl} />
+            <TextInput
+              label="expertiseDiagnostic (reparable|total_loss)"
+              value={expertiseDiagnostic}
+              onChangeText={setExpertiseDiagnostic}
+            />
 
-          <Button mode="contained" disabled={!token} onPress={transition}>
-            Transition
-          </Button>
-        </Card.Content>
-      </Card>
+            <Button mode="contained" disabled={!token} onPress={transition}>
+              Transition
+            </Button>
+          </Card.Content>
+        </Card>
 
-      <Snackbar visible={Boolean(snack)} onDismiss={() => setSnack(null)} duration={2500}>
-        {snack || ""}
-      </Snackbar>
-    </ScrollView>
+        <Snackbar visible={Boolean(snack)} onDismiss={() => setSnack(null)} duration={2500}>
+          {snack || ""}
+        </Snackbar>
+      </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingTop: 42, gap: 12 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 },
   error: { color: "#ef4444" },
   row: {

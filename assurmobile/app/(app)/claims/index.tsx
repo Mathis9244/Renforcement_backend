@@ -4,6 +4,8 @@ import { useRouter } from "expo-router";
 import { Button, Card, Text, useTheme } from "react-native-paper";
 import { api, type Claim } from "../../../lib/api";
 import { useUser } from "../../../providers/UserProvider";
+import { Screen } from "../../../components/Screen";
+import { Notice } from "../../../components/Notice";
 
 export default function ClaimsListScreen() {
   const router = useRouter();
@@ -37,23 +39,21 @@ export default function ClaimsListScreen() {
   }, [load, token]);
 
   return (
-    <ScrollView
-      style={{ backgroundColor: theme.colors.background }}
-      contentContainerStyle={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
-    >
-      <View style={styles.header}>
-        <Text variant="headlineSmall">Sinistres</Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
+    <Screen>
+      <ScrollView
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+        contentContainerStyle={{ gap: 12 }}
+      >
+        <View style={styles.header}>
+          <Text variant="headlineSmall">Sinistres</Text>
           <Button mode="contained" disabled={!token} onPress={() => router.push("/(app)/claims/new")}>
             Nouveau
           </Button>
         </View>
-      </View>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {!claims ? <Text style={{ opacity: 0.75 }}>Chargement…</Text> : null}
-      {claims?.length === 0 ? <Text style={{ opacity: 0.75 }}>Aucun sinistre pour le moment.</Text> : null}
+        {error ? <Notice tone="error">{error}</Notice> : null}
+        {!claims ? <Text style={{ opacity: 0.75 }}>Chargement…</Text> : null}
+        {claims?.length === 0 ? <Text style={{ opacity: 0.75 }}>Aucun sinistre pour le moment.</Text> : null}
 
       {claims?.map((c) => (
         <Card
@@ -86,12 +86,12 @@ export default function ClaimsListScreen() {
           </Card.Actions>
         </Card>
       ))}
-    </ScrollView>
+      </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingTop: 42, gap: 12 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   card: { marginTop: 10, borderWidth: StyleSheet.hairlineWidth },
   error: { color: "#ef4444" },
